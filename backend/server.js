@@ -25,9 +25,10 @@ const sessions = {};
  * @returns {string}
  */
 function buildLovableUrl(prompt) {
-  const baseUrl = 'https://lovable.dev/build';
+  const baseUrl = 'https://lovable.dev/?autosubmit=true#';
   const encodedPrompt = encodeURIComponent(prompt);
-  return `${baseUrl}?prompt=${encodedPrompt}`;
+  return `${baseUrl}prompt=${encodedPrompt}`;
+
 }
 
 /**
