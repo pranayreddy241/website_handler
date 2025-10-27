@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Website Builder</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; }
+    textarea, input[type="text"] { width: 100%; }
+    .section { margin-bottom: 1.5rem; }
+    button { margin-top: 0.5rem; padding: 0.5rem 1rem; }
+    ul { list-style-type: disc; margin-left: 1.5rem; }
+    iframe { width: 100%; height: 500px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>AI Website Builder</h1>
+  <p>Describe your website idea or paste a reference URL. The system will generate a Lovable build link for you to open and review. Provide feedback to iterate.</p>
+  <div class="section">
+    <label for="description">Description:</label><br />
+    <textarea id="description" rows="4" placeholder="Describe the site you want to build"></textarea>
+  </div>
+  <div class="section">
+    <label for="sourceUrl">Reference URL (optional):</label><br />
+    <input type="text" id="sourceUrl" placeholder="https://example.com" />
+  </div>
+  <button id="generateBtn">Generate Website</button>
+  <div id="generated" class="section"></div>
+  <div id="feedbackSection" style="display:none" class="section">
+    <h2>Provide Feedback</h2>
+    <textarea id="feedbackText" rows="3" placeholder="Tell us what to change or improve"></textarea><br />
+    <button id="feedbackBtn">Send Feedback &amp; Regenerate</button>
+  </div>
+  <div id="historySection" style="display:none" class="section">
+    <h2>Generation History</h2>
+    <ul id="historyList"></ul>
+  </div>
+  <div id="guidelinesSection" class="section">
+    <h2>Design Guidelines</h2>
+    <ul id="guidelinesList"></ul>
+  </div>
+
+  <script>
+    const BACKEND_URL = 'http://localhost:3001';
+    let sessionId = null;
+    let history = [];
+
+    // Fetch knowledge base
+    fetch(`${BACKEND_URL}/api/knowledge-base`)
+      .then(res => res.json())
+      .then(data => {
+        const guidelines = data.designGuidelines || [];
+        const listEl = document.getElementById('guidelinesList');
+        guidelines.forEach(line => {
+          const li = document.createElement('li');
+          li.textContent = line;
+          listEl.appendChild(li);
+        });
+      })
+      .catch(err => console.error('Failed to load knowledge base', err));
+
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const desc = document.getElementById('description').value;
+      const url = document.getElementById('sourceUrl').value;
+      const payload = { description: desc, url, sessionId };
+      const res = await fetch(`${BACKEND_URL}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      sessionId = data.sessionId;
+      const buildUrl = data.buildUrl;
+      history.push({ buildUrl, feedback: null });
+      updateGenerated(buildUrl);
+      updateHistory();
+    });
+
+    document.getElementById('feedbackBtn').addEventListener('click', async () => {
+      const fb = document.getElementById('feedbackText').value.trim();
+      if (!fb) return;
+      const res = await fetch(`${BACKEND_URL}/api/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, feedback: fb })
+      });
+      const data = await res.json();
+      const buildUrl = data.buildUrl;
+      history.push({ buildUrl, feedback: fb });
+      document.getElementById('feedbackText').value = '';
+      updateGenerated(buildUrl);
+      updateHistory();
+    });
+
+    function updateGenerated(link) {
+      const genDiv = document.getElementById('generated');
+      genDiv.innerHTML = '';
+      if (link) {
+        const h2 = document.createElement('h2');
+        h2.textContent = 'Generated Website Link';
+        const a = document.createElement('a');
+        a.href = link;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = link;
+        genDiv.appendChild(h2);
+        genDiv.appendChild(a);
+        const p = document.createElement('p');
+        p.textContent = 'Open this link in a new tab to see the AI-generated website. Return here to give feedback and iterate.';
+        genDiv.appendChild(p);
+        // Show feedback section after first generation
+        document.getElementById('feedbackSection').style.display = 'block';
+      }
+    }
+
+    function updateHistory() {
+      const historySection = document.getElementById('historySection');
+      const list = document.getElementById('historyList');
+      list.innerHTML = '';
+      history.forEach((item, idx) => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = item.buildUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = `Version ${idx + 1}`;
+        li.appendChild(a);
+        if (item.feedback) {
+          const span = document.createElement('span');
+          span.textContent = ` – Feedback: ${item.feedback}`;
+          li.appendChild(span);
+        }
+        list.appendChild(li);
+      });
+      if (history.length > 0) {
+        historySection.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
