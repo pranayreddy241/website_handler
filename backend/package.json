@@ -1,0 +1,10 @@
+{
+  "name": "lovable-platform-backend",
+  "version": "1.0.0",
+  "description": "Backend server for the Lovable website building platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {}
+}
