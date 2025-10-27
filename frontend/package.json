@@ -1,6 +1,0 @@
-{
-  "name": "lovable-platform-frontend",
-  "version": "1.0.0",
-  "description": "Static frontend for the Lovable website building platform. Uses plain HTML and JavaScript.",
-  "notes": "This project no longer depends on React; the UI is defined in index.html."
-}
